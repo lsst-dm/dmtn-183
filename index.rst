@@ -15,10 +15,9 @@ This document proposes a technical design for a database of alert packets.
 
 At a high level, the proposal is to store raw alert packets in an object store.
 All packets can be retrieved by ID.
-Queries which search the alert database can be performed by querying the PPDB, and then requesting the packets (by ID) from the object store.
+Queries which search the alert database can be performed by querying the PPDB to get IDs of alert packets, and then requesting the packets by ID from the object store.
 
-In addition, to facilitate bulk access, we propose storing single-file archives
-of all alerts published each night.
+In addition, to facilitate bulk access, we propose storing single-file archives of all alerts published each night.
 
 This system should be straightforward to build and administer, and it should be cost effective.
 It will require about 2-3 terabytes of space in the object store per year, and about 40 gigabytes of space per year for the PostgreSQL index database.
@@ -43,28 +42,21 @@ Use cases: a historical record
 Because the Alert Database acts as a historical record, it must keep all data in perpetuity.
 This amounts to a few terabytes per year (see "Data Sizing Calculations" below).
 
-We must be able to back up the Alert Database to protect from data loss.
-
-All writes to the Database from the Alert Production system must be fully stored before they are acknowledged.
-
-The Database must always be available for writes while Alert Production is running so that it doesn't miss data.
+To be a good historical record, we need to take data durability seriously.
+All writes to the Database from the Alert Production system must be fully stored before they are acknowledged, and we must be able to back up the Alert Database to protect from data loss.
 
 The only operations that should be permitted are reads and writes; updates and deletes should not be possible in the normal course of events.
 They might be necessary for corrective action if there has been a serious bug, but they certainly should not be exposed to ordinary users.
-
-Bulk access to the historical archive does not need to be especially fast.
 
 Use cases: queryable DB
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 The Alert Database needs to support "needle in a haystack" queries based on specific a single alert identifier.
-In particular:
-
- - ``get(alert_id)`` ought to retrieve the single alert packet associated with a specific alert_id.
+In particular, `get(alert_id)`` ought to retrieve the single alert packet associated with a specific alert_id.
 
 This should generally respond within a few seconds.
 
-In general, we should expect recent data to be queried more often than old data.
+In general, we can expect recent data to be queried more often than old data for this purpose, but everything needs to be available.
 
 Use cases: resource for developers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -84,7 +76,7 @@ Combining these figures, we project 80 gigabytes of alert data per night, and 2.
 Existing Requirements
 ---------------------
 
-The database is referenced in a handful of existing project requiremnts documents:
+The database is referenced in a handful of existing project requirements documents:
 
  - OSS-REQ-0128 "Alerts" :cite:`LSE-30`:
 
@@ -109,8 +101,8 @@ The database is referenced in a handful of existing project requiremnts document
 Proposed Implementation
 =======================
 
-We can satisfy these inputs by storing serialized Avro alert data (the same
-bytes sent via Kafka to brokers) in a S3-like object store, indexed by a unique alert ID. Each alert packet corresponds to one object in the object store.
+We can satisfy these design inputs by storing serialized Avro alert data (the same bytes sent via Kafka to brokers) in a S3-like object store, indexed by a unique alert ID.
+Each alert packet corresponds to one object in the object store.
 
 .. note::
 
@@ -119,10 +111,9 @@ bytes sent via Kafka to brokers) in a S3-like object store, indexed by a unique 
    Storage might be more efficient because compression would be better when storing many alerts.
    Retrieval might be more efficient because it might tune the outgoing flows into a smaller number of TCP connections which get a chance to grow window sizes.
 
-   But this would be more complex, so this design sticks to a simpler structure.
+   But this would be more complex, and make writing more difficult, as writes need to append to existing data which would require coordination between writers, so this design sticks to a simpler structure.
 
 An object store is used because it is cheap, scales well to handle terabytes of data, and should support parallel retrieval reasonably well.
-Object stores tend to have somewhat high latency for bulk access, but this is acceptable.
 
 Writing data
 ------------
@@ -152,6 +143,26 @@ This satisfies each of the three use cases:
    Archival files are available for bulk analysis of the historical record.
  - As a **queryable DB**: By querying the PPDB, users can search alerts by any of their fields or attributes, albeit with a one-day delay. Once they have alert IDs, they can get all underlying packets.
  - As a **resource for developers**: Object Container files provide bulk access.
+
+Alert Identifier
+----------------
+
+We need an identifier which is unique across all alerts which can be used as the key for the object store.
+We can use ``diaSourceId`` for this purpose.
+
+Limitations
+===========
+
+This design does not provide any sort of complex querying logic for data which has been stored since the last PPDB update.
+Since the PPDB is updated daily, this means that the last 24 hours of data will not be indexed for complex queries.
+This is acceptable, though, since the querying features of the alert database are not intended to support real-time online use cases.
+
+Possible interaction with Alert Filtering Service
+=================================================
+
+One possible design of an alert filtering service would be to publish alert packet IDs with a small batch of useful information about the alert.
+Consumers of that publication feed could decide to retrieve the full alert packet from the alert database if that small batch of useful information passed their filters.
+In order to protect the object store backend and fairly use network resources, we could put a rate-limiting proxy in front of the object store.
 
 
 .. .. rubric:: References
