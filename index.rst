@@ -130,8 +130,6 @@ Reading data
 
 To read individual alert data, users access the backing alert packets through the butler, which should wrap up the object storage and provide access by alert ID.
 
-To read bulk alert data, users can request the Avro Object Container files for particular nights.
-
 This satisfies each of the three use cases:
  - As a **historical record**: By writing to the object store first, we can be sure that all published alerts are recorded.
    In case of Kafka downtime, we may store _more_ alerts than were recorded, but this is acceptable.
@@ -154,6 +152,9 @@ We plan to see if there is suitable demand for this feature to justify adding it
 
 All observing is complete for a night, all the alerts that were succesfully published that night could be combined into a single Avro Object Container file, stored on an archival filesystem.
 The set of published alerts can be identified by consuming from the Kafka topic.
+
+To read bulk alert data, users can request the Avro Object Container files for particular nights.
+We have not identified a particular protocol for those requests.
 
 Limitations
 ===========
