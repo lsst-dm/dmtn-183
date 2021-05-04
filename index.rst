@@ -52,7 +52,7 @@ Use cases: queryable DB
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 The Alert Database needs to support "needle in a haystack" queries based on specific a single alert identifier.
-In particular, `get(alert_id)`` ought to retrieve the single alert packet associated with a specific alert_id.
+In particular, ``get(alertId)`` ought to retrieve the single alert packet associated with a specific ``alertId``.
 
 This should generally respond within a few seconds.
 
@@ -142,7 +142,7 @@ Alert Identifier
 ----------------
 
 We need an identifier which is unique across all alerts which can be used as the key for the object store.
-We can use ``diaSourceId`` for this purpose.
+We can use ``alertId`` for this purpose, as defined in the PPDB.
 
 Providing bulk access
 ---------------------
