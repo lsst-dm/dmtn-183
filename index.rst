@@ -166,7 +166,7 @@ This is acceptable, though, since the querying features of the alert database ar
 Possible interaction with Alert Filtering Service
 =================================================
 
-One possible design of an alert filtering service would be to publish alert packet IDs with a small batch of useful information about the alert.
+One possible design of an alert filtering service would be to publish alert packet IDs with a small batch of useful information about the alert :cite:`DMTN-165`.
 Consumers of that publication feed could decide to retrieve the full alert packet from the alert database if that small batch of useful information passed their filters.
 In order to protect the object store backend and fairly use network resources, we could put a rate-limiting proxy in front of the object store.
 
