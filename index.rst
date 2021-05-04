@@ -17,7 +17,7 @@ At a high level, the proposal is to store raw alert packets in an object store.
 All packets can be retrieved by ID.
 Queries which search the alert database can be performed by querying the PPDB to get IDs of alert packets, and then requesting the packets by ID from the object store.
 
-In addition, to facilitate bulk access, we propose storing single-file archives of all alerts published each night.
+In addition, to facilitate bulk access, we may store single-file archives of all alerts published each night.
 
 This system should be straightforward to build and administer, and it should be cost effective.
 It will require about 2-3 terabytes of space in the object store per year, and about 40 gigabytes of space per year for the PostgreSQL index database.
@@ -124,10 +124,6 @@ When the alert production pipeline has computed a new alert packet, it should be
  2. Write the alert packet to the object store, using the alert ID as a key.
  3. Publish the alert packet to the Kafka topic that serves data to community brokers.
 
-In addition, after all observing is complete for a night, all the alerts that were succesfully published that night should be combined into a single Avro Object Container file.
-The file should be stored on an archival filesystem.
-The set of published alerts can be identified by consuming from the Kafka topic.
-
 
 Reading data
 ------------
@@ -149,6 +145,15 @@ Alert Identifier
 
 We need an identifier which is unique across all alerts which can be used as the key for the object store.
 We can use ``diaSourceId`` for this purpose.
+
+Providing bulk access
+---------------------
+
+We may wish to provide bulk access to data in large chunks, like single files of all the alerts for a single night's observations.
+We plan to see if there is suitable demand for this feature to justify adding it.
+
+All observing is complete for a night, all the alerts that were succesfully published that night could be combined into a single Avro Object Container file, stored on an archival filesystem.
+The set of published alerts can be identified by consuming from the Kafka topic.
 
 Limitations
 ===========
