@@ -20,7 +20,7 @@ Queries which search the alert database can be performed by querying the PPDB to
 In addition, to facilitate bulk access, we may store single-file archives of all alerts published each night.
 
 This system should be straightforward to build and administer, and it should be cost effective.
-It will require about 2-3 terabytes of space in the object store per year, and about 40 gigabytes of space per year for the PostgreSQL index database.
+It will require about 2-3 terabytes of space in the object store per year.
 
 Design Inputs
 =============
