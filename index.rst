@@ -20,7 +20,7 @@ Queries which search the alert database can be performed by querying the PPDB to
 In addition, to facilitate bulk access, we may store single-file archives of all alerts published each night.
 
 This system should be straightforward to build and administer, and it should be cost effective.
-It will require about 2-3 terabytes of space in the object store per year.
+It will require about 24 terabytes of space in the object store per year.
 
 Design Inputs
 =============
@@ -40,7 +40,7 @@ Use cases: a historical record
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Because the Alert Database acts as a historical record, it must keep all data in perpetuity.
-This amounts to a few terabytes per year (see "Data Sizing Calculations" below).
+This amounts to about 24 terabytes per year (see "Data Sizing Calculations" below).
 
 To be a good historical record, we need to take data durability seriously.
 All writes to the Database from the Alert Production system must be fully stored before they are acknowledged, and we must be able to back up the Alert Database to protect from data loss.
@@ -71,7 +71,7 @@ DMTN-102 :cite:`DMTN-102` provides estimates for the total volume of alerts rece
 We expect a maximum of about 10 million alerts per night, each about 80 kilobytes.
 LSE-163 :cite:`LSE-163` projects about 300 nights of observations per year.
 
-Combining these figures, we project 80 gigabytes of alert data per night, and 2.4 terabytes per year.
+Combining these figures, we project 800 gigabytes of alert data per night, and 24 terabytes per year.
 
 Existing Requirements
 ---------------------
