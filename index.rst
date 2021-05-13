@@ -15,7 +15,8 @@ This document proposes a technical design for a database of alert packets.
 
 At a high level, the proposal is to store raw alert packets, compressed with gzip, in an object store.
 All packets can be retrieved by ID.
-Queries which search the alert database can be performed by querying the PPDB to get IDs of alert packets, and then requesting the packets by ID from the object store.
+Queries which search the alert database can be performed by querying the PPDB to get IDs of alert packets, and then requesting the packets by ID from an HTTP frontend to the object store.
+A lightweight Python client library will simplify this access.
 
 Alert packets are prefixed with an identifer for the Avro schema that was used to encode them, and those schemas are also stored in the object store by ID.
 
@@ -138,6 +139,16 @@ Each alert packet corresponds to one object in the object store.
 
 An object store is used because it scales well to handle many terabytes of data, and should support parallel reads and writes well.
 
+Writes to the object store are handled by a Kafka consumer which copies alert packets from the main Kafka topic into the alert database.
+
+Reads are servered with a lightweight HTTP service and accompanying client library which allow retrieval by alert ID of any packet.
+
+This satisfies each of the primary use cases:
+ - As a **historical record**: By consuming from the actual written Kafka stream, we can be sure that we are storing alert packets as they were actually sent.
+   All alerts are stored in perpetuity in the database, forming a historical record.
+ - As a **queryable DB**: By querying the PPDB, users can search alerts by any of their fields or attributes, albeit with a one-day delay.
+   Once they have alert IDs, they can get all underlying packets.
+
 Object storage layout
 ---------------------
 
@@ -201,12 +212,25 @@ This is acceptable because none of the primary use cases for the database requir
 Reading data
 ------------
 
-To read individual alert data, users access the backing alert packets through the butler, which should wrap up the object storage and provide access by alert ID.
+To read individual alert data, users access the backing alert packets via a Python client which makes HTTP requests to a simple authenticated service.
+This HTTP service needs to support two API endpoints:
 
-This satisfies each of the primary use cases:
- - As a **historical record**: By consuming from the actual written Kafka stream, we can be sure that we are storing alert packets as they were actually sent.
- - As a **queryable DB**: By querying the PPDB, users can search alerts by any of their fields or attributes, albeit with a one-day delay.
-   Once they have alert IDs, they can get all underlying packets.
+1. ``GET /v1/alerts/<alert_id>`` should retrieve the alert from the object store and return it without any modification, in its original Confluent Wire Format encoding.
+2. ``GET /v1/schemas/<schema_id>`` should retrieve the schema from the object store and return it without modification, in its original JSON encoding.
+
+The client library which wraps these API calls should provide three functions:
+
+1. ``get_alert(alert_id)`` should return a ``dict`` of deserialized alert data for the given alert.
+   This function should rely upon a local cache of schema documents, stored in memory in the Python process.
+2. ``get_raw_alert_bytes(alert_id)`` should return `bytes` of the underlying alert packet.
+   In other words, this passes through the response from ``GET /v1/alerts/<alert_id>`` directly.
+3. ``get_schema(schema_id)`` should return `bytes` of a JSON document describing the given schema.
+   In other words, this passes through the response from ``GET /v1/schema/<schema_id>`` directly.
+
+The first function, ``get_alert``, is likely to be the main API for most users.
+The other two exist to power ``get_alert``, and to permit lower-level operations.
+
+More high-level functions (for example, ones that query the PPDB to find alerts that match some predicates) may be added in the future in the client.
 
 Optional: Providing bulk access
 -------------------------------
