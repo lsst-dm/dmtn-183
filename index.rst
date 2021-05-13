@@ -203,9 +203,8 @@ Reading data
 
 To read individual alert data, users access the backing alert packets through the butler, which should wrap up the object storage and provide access by alert ID.
 
-This satisfies each of the use cases:
- - As a **historical record**: By writing to the object store first, we can be sure that all published alerts are recorded.
-   In case of Kafka downtime, we may store _more_ alerts than were recorded, but this is acceptable.
+This satisfies each of the primary use cases:
+ - As a **historical record**: By consuming from the actual written Kafka stream, we can be sure that we are storing alert packets as they were actually sent.
  - As a **queryable DB**: By querying the PPDB, users can search alerts by any of their fields or attributes, albeit with a one-day delay.
    Once they have alert IDs, they can get all underlying packets.
 
