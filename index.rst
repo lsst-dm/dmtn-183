@@ -137,7 +137,11 @@ Each alert packet corresponds to one object in the object store.
    It would also make reading more complex; a separate index would need to be maintained which translates alert packet IDs into an identifier for the block containing the alert.
    In light of these complexities, this design sticks to a simpler structure.
 
-An object store is used because it scales well to handle many terabytes of data, and should support parallel reads and writes well.
+An "object store" here is taken to mean an S3-like system.
+It should it scale well to handle many terabytes of data.
+The underlying object store should provide strong guarantees on data durability, either through redundancy or automated backups.
+It should also support write throughput which can keep up with the alert stream volume, handling at least 2,000 writes per second [1]_, with each write averaging around 40 kilobytes.
+Finally, it should support random read access with a median latency of under 2 seconds, permitting several hundred reads per second.
 
 Writes to the object store are handled by a Kafka consumer which copies alert packets from the main Kafka topic into the alert database.
 
@@ -279,6 +283,8 @@ In order to protect the object store backend and fairly use network resources, w
 
 In order to make sure that alerts are available in the alert database before publishing one of these lightweight alert notifications, we could publish lightweight alerts directly from the same Kafka consumer which writes into the alert database's backing object store.
 
+.. [1] 2,000 requests per second would be sufficient to handle a single exposure in 5 seconds, which is used here as a ballpark figure for keeping up with the alert stream's bursty volume.
+       Taking longer than 5 seconds would be acceptable if the alert filtering service is not implemented, since then there are no latency requirements on the alert database.
 
 .. .. rubric:: References
 
