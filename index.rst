@@ -39,7 +39,7 @@ Broadly speaking, the Alert Database will have two primary uses:
 In addition, we aim to be flexible enough to support two possible additional use cases, without immediately committing to their development:
 
 3. We may wish to provide bulk access to large piles of alert data (for example, several entire nights' alerts) for development and training of algorithms which process alert data.
-4. We may wish to act as the low-level backend which supports an alert filtering service.
+4. We may wish it to serve as the low-level backend which supports an alert filtering service.
 
 Use cases: a historical record
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -73,7 +73,7 @@ We plan to see if there is suitable demand for this feature to justify adding it
 Possible use case: alert filtering backend
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-DMTN-165 :cite:`DMTN-165` proposes an alert filtering service which consists of a stream of alert packet IDs and a small bit of associated data.
+DMTN-165 :cite:`DMTN-165` proposes a "hybrid" alert filtering service which consists of a stream of alert packet IDs and a small bit of associated data.
 Consumers of that stream could decide to retrieve the full alert packet if that small bit of data passes their filters.
 
 Fast retrieval of alert packets by ID would be required for this to work.
@@ -145,7 +145,7 @@ Finally, it should support random read access with a median latency of under 2 s
 
 Writes to the object store are handled by a Kafka consumer which copies alert packets from the main Kafka topic into the alert database.
 
-Reads are servered with a lightweight HTTP service and accompanying client library which allow retrieval by alert ID of any packet.
+Reads are served with a lightweight HTTP service and accompanying client library which allow retrieval by alert ID of any packet.
 
 This satisfies each of the primary use cases:
  - As a **historical record**: By consuming from the actual written Kafka stream, we can be sure that we are storing alert packets as they were actually sent.
@@ -268,7 +268,7 @@ If the archiving Kafka consumer fails or is misconfigured, we might broadcast al
 We have three fallbacks, however:
 
 1. Kafka stores messages for a configurable length of time.
-   If the archivist recovers within the lifetime of messages in Kafka, we could replay historical alerts and write them into the object store.
+   If the archivist recovers within the lifetime of messages in Kafka (~one week), we could replay historical alerts and write them into the object store.
 2. We may contact downstream brokers to recover a copy of the missed alerts to store them.
 3. In theory, we should be capable of reconstructing alerts entirely from the PPDB.
 
