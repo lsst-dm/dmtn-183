@@ -4,8 +4,6 @@
 
 .. note::
 
-   **This technote is not yet published.**
-
    Design document for a database of all alerts sent by the Rubin observatory.
 
 Summary
